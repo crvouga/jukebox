@@ -1,6 +1,5 @@
 module Backend exposing (..)
 
-import Html
 import Lamdera exposing (ClientId, SessionId)
 import Set
 import Time
@@ -11,6 +10,15 @@ type alias Model =
     BackendModel
 
 
+type alias App =
+    { init : ( Model, Cmd BackendMsg )
+    , update : BackendMsg -> Model -> ( Model, Cmd BackendMsg )
+    , updateFromFrontend : SessionId -> ClientId -> ToBackend -> Model -> ( Model, Cmd BackendMsg )
+    , subscriptions : Model -> Sub BackendMsg
+    }
+
+
+app : App
 app =
     Lamdera.backend
         { init = init
@@ -50,26 +58,27 @@ update msg model =
             ( model, Cmd.none )
 
 
-updateFromFrontend : Lamdera.SessionId -> Lamdera.ClientId -> ToBackend -> Model -> ( Model, Cmd BackendMsg )
-updateFromFrontend sessionId clientId msg model =
+updateFromFrontend : SessionId -> ClientId -> ToBackend -> Model -> ( Model, Cmd BackendMsg )
+updateFromFrontend _ _ msg model =
     case msg of
         NoOpToBackend ->
             ( model, Cmd.none )
 
 
-subscriptions model =
+subscriptions : Model -> Sub BackendMsg
+subscriptions _ =
     Sub.batch
-        [ Time.every 1000 (\t -> Ticked)
+        [ Time.every 1000 (\_ -> Ticked)
         , Lamdera.onConnect onConnect
         , Lamdera.onDisconnect onDisconnect
         ]
 
 
 onConnect : SessionId -> ClientId -> BackendMsg
-onConnect sessionId clientId =
+onConnect _ clientId =
     ClientConnected clientId
 
 
 onDisconnect : SessionId -> ClientId -> BackendMsg
-onDisconnect sessionId clientId =
+onDisconnect _ clientId =
     ClientDisconnected clientId
