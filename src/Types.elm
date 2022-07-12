@@ -3,6 +3,7 @@ module Types exposing (..)
 import Browser exposing (UrlRequest)
 import Browser.Navigation exposing (Key)
 import Lamdera exposing (ClientId)
+import Maybe exposing (Maybe)
 import Set exposing (Set)
 import Url exposing (Url)
 
@@ -10,7 +11,7 @@ import Url exposing (Url)
 type alias FrontendModel =
     { key : Key
     , message : String
-    , tickCount : Int
+    , tickCount : Maybe Int
     }
 
 

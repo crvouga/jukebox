@@ -2,9 +2,10 @@ module Frontend exposing (..)
 
 import Browser exposing (UrlRequest(..))
 import Browser.Navigation as Nav
-import Html
+import Html exposing (button, div, form, input, label, text)
 import Html.Attributes as Attr
 import Lamdera
+import Maybe
 import Types exposing (..)
 import Url
 
@@ -40,8 +41,8 @@ app =
 init : Url.Url -> Nav.Key -> ( Model, Cmd FrontendMsg )
 init _ key =
     ( { key = key
-      , message = "Welcome to Lamdera! You're looking at the auto-generated base implementation. Check out src/Frontend.elm to start coding!"
-      , tickCount = 0
+      , message = "HELLO"
+      , tickCount = Maybe.Nothing
       }
     , Cmd.none
     )
@@ -73,30 +74,78 @@ updateFromBackend : ToFrontend -> Model -> ( Model, Cmd FrontendMsg )
 updateFromBackend msg model =
     case msg of
         NewTick tickCount ->
-            ( { model | tickCount = tickCount }, Cmd.none )
+            ( { model | tickCount = Maybe.Just tickCount }, Cmd.none )
 
         NoOpToFrontend ->
             ( model, Cmd.none )
 
 
 view : Model -> Browser.Document FrontendMsg
-view model =
+view _ =
     { title = ""
     , body =
-        [ Html.div [ Attr.style "text-align" "center", Attr.style "padding-top" "40px" ]
-            [ Html.img [ Attr.src "https://lamdera.app/lamdera-logo-black.png", Attr.width 150 ] []
-            , Html.div
-                [ Attr.style "font-family" "sans-serif"
-                , Attr.style "padding-top" "40px"
-                ]
-                [ Html.text model.message
-                ]
-            , Html.div
-                [ Attr.style "font-family" "sans-serif"
-                , Attr.style "padding-top" "40px"
-                ]
-                [ Html.h1 [] [ Html.text (String.fromInt model.tickCount) ]
-                ]
-            ]
+        [ bootstrapCDN
+        , div [ Attr.class "p-4" ] [ viewSignUpForm ]
         ]
     }
+
+
+viewSignUpForm : Html.Html msg
+viewSignUpForm =
+    form []
+        [ div
+            [ Attr.class "mb-3"
+            ]
+            [ label
+                [ Attr.for "exampleInputEmail1"
+                , Attr.class "form-label"
+                ]
+                [ text "Email address" ]
+            , input
+                [ Attr.type_ "email"
+                , Attr.class "form-control"
+                , Attr.id "exampleInputEmail1"
+                , Attr.attribute "aria-describedby" "emailHelp"
+                ]
+                []
+            ]
+        , div
+            [ Attr.class "mb-3"
+            ]
+            [ label
+                [ Attr.for "exampleInputPassword1"
+                , Attr.class "form-label"
+                ]
+                [ text "Password" ]
+            , input
+                [ Attr.type_ "password"
+                , Attr.class "form-control"
+                , Attr.id "exampleInputPassword1"
+                ]
+                []
+            ]
+        , button
+            [ Attr.class "btn btn-primary btn-block"
+            ]
+            [ text "Submit" ]
+        ]
+
+
+bootstrapCDN : Html.Html msg
+bootstrapCDN =
+    Html.node "link"
+        [ Attr.href "https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
+        , Attr.rel "stylesheet"
+        , Attr.attribute "integrity" "sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
+        , Attr.attribute "crossorigin" "anonymous"
+        ]
+        []
+
+
+viewTickCount : Model -> Html.Html msg
+viewTickCount model =
+    Html.text
+        (model.tickCount
+            |> Maybe.map String.fromInt
+            |> Maybe.withDefault "Loading..."
+        )
