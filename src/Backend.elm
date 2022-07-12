@@ -1,13 +1,22 @@
 module Backend exposing (..)
 
+import Dict
 import Lamdera exposing (ClientId, SessionId)
 import Set
 import Time
 import Types exposing (..)
 
 
+
+-- Model
+
+
 type alias Model =
     BackendModel
+
+
+
+-- App
 
 
 type alias App =
@@ -28,24 +37,49 @@ app =
         }
 
 
+
+-- Init
+
+
 init : ( Model, Cmd BackendMsg )
 init =
     ( { message = "Hello!"
       , tickCount = 0
-      , clients = Set.empty
+      , sessions = Dict.empty
       }
     , Cmd.none
     )
 
 
+
+-- Update
+
+
 update : BackendMsg -> Model -> ( Model, Cmd BackendMsg )
 update msg model =
     case msg of
-        ClientConnected clientId ->
-            ( { model | clients = Set.insert clientId model.clients }, Cmd.none )
+        ClientConnected sessionId clientId ->
+            let
+                session : Session
+                session =
+                    { sessionId = sessionId
+                    , clientId = clientId
+                    }
+            in
+            ( { model
+                | sessions =
+                    Dict.insert sessionId session model.sessions
+              }
+            , Lamdera.sendToFrontend clientId (GotSession session)
+            )
 
-        ClientDisconnected clientId ->
-            ( { model | clients = Set.remove clientId model.clients }, Cmd.none )
+        ClientDisconnected sessionId _ ->
+            ( { model
+                | sessions =
+                    Dict.remove sessionId model.sessions
+              }
+            , Cmd.none
+            )
 
         Ticked ->
             let
@@ -65,19 +99,13 @@ updateFromFrontend _ _ msg model =
             ( model, Cmd.none )
 
 
+
+-- Subscriptions
+
+
 subscriptions : Model -> Sub BackendMsg
 subscriptions _ =
     Sub.batch
-        [ Lamdera.onConnect onConnect
-        , Lamdera.onDisconnect onDisconnect
+        [ Lamdera.onConnect ClientConnected
+        , Lamdera.onDisconnect ClientDisconnected
         ]
-
-
-onConnect : SessionId -> ClientId -> BackendMsg
-onConnect _ clientId =
-    ClientConnected clientId
-
-
-onDisconnect : SessionId -> ClientId -> BackendMsg
-onDisconnect _ clientId =
-    ClientDisconnected clientId

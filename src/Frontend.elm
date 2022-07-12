@@ -57,6 +57,7 @@ init url key =
       , message = "HELLO"
       , tickCount = Maybe.Nothing
       , route = url |> Route.fromUrl |> Maybe.withDefault Route.Home
+      , session = Maybe.Nothing
       }
     , Cmd.none
     )
@@ -91,6 +92,9 @@ update msg model =
 updateFromBackend : ToFrontend -> Model -> ( Model, Cmd FrontendMsg )
 updateFromBackend msg model =
     case msg of
+        GotSession session ->
+            ( { model | session = Maybe.Just session }, Cmd.none )
+
         NewTick tickCount ->
             ( { model | tickCount = Maybe.Just tickCount }, Cmd.none )
 
@@ -107,9 +111,20 @@ view model =
     { title = "Jukebox"
     , body =
         [ bootstrapCDN
+        , viewSession model
         , viewMain model
         ]
     }
+
+
+viewSession : Model -> Html.Html msg
+viewSession model =
+    case model.session of
+        Nothing ->
+            div [] [ text "Loading session..." ]
+
+        Just session ->
+            div [] [ text ("sessionId " ++ session.sessionId) ]
 
 
 viewMain : Model -> Html.Html msg
@@ -124,7 +139,12 @@ viewMain model =
 
 viewHome : Html.Html msg
 viewHome =
-    div [ Attr.class "block" ] [ text "Home" ]
+    div
+        [ Attr.class "p-4"
+        ]
+        [ Html.h4 [] [ text "Jukebox" ]
+        , button [ Attr.class "btn btn-primary btn-block" ] [ text "Create Room" ]
+        ]
 
 
 viewLogin : Html.Html msg
