@@ -2,6 +2,8 @@ module Types exposing (..)
 
 import Browser exposing (UrlRequest)
 import Browser.Navigation exposing (Key)
+import Lamdera exposing (ClientId)
+import Set exposing (Set)
 import Url exposing (Url)
 
 
@@ -15,6 +17,7 @@ type alias FrontendModel =
 type alias BackendModel =
     { message : String
     , tickCount : Int
+    , clients : Set ClientId
     }
 
 
@@ -31,6 +34,8 @@ type ToBackend
 type BackendMsg
     = NoOpBackendMsg
     | Ticked
+    | ClientConnected ClientId
+    | ClientDisconnected ClientId
 
 
 type ToFrontend

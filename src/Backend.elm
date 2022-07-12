@@ -2,6 +2,7 @@ module Backend exposing (..)
 
 import Html
 import Lamdera exposing (ClientId, SessionId)
+import Set
 import Time
 import Types exposing (..)
 
@@ -21,7 +22,10 @@ app =
 
 init : ( Model, Cmd BackendMsg )
 init =
-    ( { message = "Hello!", tickCount = 0 }
+    ( { message = "Hello!"
+      , tickCount = 0
+      , clients = Set.empty
+      }
     , Cmd.none
     )
 
@@ -29,6 +33,12 @@ init =
 update : BackendMsg -> Model -> ( Model, Cmd BackendMsg )
 update msg model =
     case msg of
+        ClientConnected clientId ->
+            ( { model | clients = Set.insert clientId model.clients }, Cmd.none )
+
+        ClientDisconnected clientId ->
+            ( { model | clients = Set.remove clientId model.clients }, Cmd.none )
+
         Ticked ->
             let
                 tickCountNew =
@@ -40,7 +50,7 @@ update msg model =
             ( model, Cmd.none )
 
 
-updateFromFrontend : SessionId -> ClientId -> ToBackend -> Model -> ( Model, Cmd BackendMsg )
+updateFromFrontend : Lamdera.SessionId -> Lamdera.ClientId -> ToBackend -> Model -> ( Model, Cmd BackendMsg )
 updateFromFrontend sessionId clientId msg model =
     case msg of
         NoOpToBackend ->
@@ -48,4 +58,18 @@ updateFromFrontend sessionId clientId msg model =
 
 
 subscriptions model =
-    Time.every 1000 (\t -> Ticked)
+    Sub.batch
+        [ Time.every 1000 (\t -> Ticked)
+        , Lamdera.onConnect onConnect
+        , Lamdera.onDisconnect onDisconnect
+        ]
+
+
+onConnect : SessionId -> ClientId -> BackendMsg
+onConnect sessionId clientId =
+    ClientConnected clientId
+
+
+onDisconnect : SessionId -> ClientId -> BackendMsg
+onDisconnect sessionId clientId =
+    ClientDisconnected clientId
