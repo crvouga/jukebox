@@ -2,10 +2,11 @@ module Frontend exposing (..)
 
 import Browser exposing (UrlRequest(..))
 import Browser.Navigation as Nav
-import Html exposing (button, div, form, h1, input, label, text)
+import Html exposing (button, div, input, label, text)
 import Html.Attributes as Attr
 import Lamdera
 import Maybe
+import Route exposing (Route)
 import Types exposing (..)
 import Url
 
@@ -51,10 +52,11 @@ app =
 
 
 init : Url.Url -> Nav.Key -> ( Model, Cmd FrontendMsg )
-init _ key =
+init url key =
     ( { key = key
       , message = "HELLO"
       , tickCount = Maybe.Nothing
+      , route = url |> Route.fromUrl |> Maybe.withDefault Route.Home
       }
     , Cmd.none
     )
@@ -101,18 +103,32 @@ updateFromBackend msg model =
 
 
 view : Model -> Browser.Document FrontendMsg
-view _ =
-    { title = ""
+view model =
+    { title = "Jukebox"
     , body =
         [ bootstrapCDN
-        , Html.h4 [ Attr.class "py-3 d-flex flex-row justify-content-center" ] [ text "Login" ]
-        , div [ Attr.class "px-3" ] [ viewSignUpForm ]
+        , viewMain model
         ]
     }
 
 
-viewSignUpForm : Html.Html msg
-viewSignUpForm =
+viewMain : Model -> Html.Html msg
+viewMain model =
+    case model.route of
+        Route.Home ->
+            viewHome
+
+        Route.Login ->
+            viewLogin
+
+
+viewHome : Html.Html msg
+viewHome =
+    div [ Attr.class "block" ] [ text "Home" ]
+
+
+viewLogin : Html.Html msg
+viewLogin =
     div [ Attr.class "block" ]
         [ div
             [ Attr.class "mb-3"

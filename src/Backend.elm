@@ -68,8 +68,7 @@ updateFromFrontend _ _ msg model =
 subscriptions : Model -> Sub BackendMsg
 subscriptions _ =
     Sub.batch
-        [ Time.every 1000 (\_ -> Ticked)
-        , Lamdera.onConnect onConnect
+        [ Lamdera.onConnect onConnect
         , Lamdera.onDisconnect onDisconnect
         ]
 

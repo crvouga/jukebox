@@ -4,6 +4,7 @@ import Browser exposing (UrlRequest)
 import Browser.Navigation exposing (Key)
 import Lamdera exposing (ClientId)
 import Maybe exposing (Maybe)
+import Route exposing (Route)
 import Set exposing (Set)
 import Url exposing (Url)
 
@@ -12,6 +13,7 @@ type alias FrontendModel =
     { key : Key
     , message : String
     , tickCount : Maybe Int
+    , route : Route
     }
 
 
