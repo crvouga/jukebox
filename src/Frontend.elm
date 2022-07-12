@@ -2,7 +2,7 @@ module Frontend exposing (..)
 
 import Browser exposing (UrlRequest(..))
 import Browser.Navigation as Nav
-import Html exposing (button, div, form, input, label, text)
+import Html exposing (button, div, form, h1, input, label, text)
 import Html.Attributes as Attr
 import Lamdera
 import Maybe
@@ -10,8 +10,16 @@ import Types exposing (..)
 import Url
 
 
+
+-- Model
+
+
 type alias Model =
     FrontendModel
+
+
+
+-- Main
 
 
 type alias App =
@@ -38,6 +46,10 @@ app =
         }
 
 
+
+-- Init
+
+
 init : Url.Url -> Nav.Key -> ( Model, Cmd FrontendMsg )
 init _ key =
     ( { key = key
@@ -46,6 +58,10 @@ init _ key =
       }
     , Cmd.none
     )
+
+
+
+-- Update
 
 
 update : FrontendMsg -> Model -> ( Model, Cmd FrontendMsg )
@@ -80,31 +96,36 @@ updateFromBackend msg model =
             ( model, Cmd.none )
 
 
+
+-- View
+
+
 view : Model -> Browser.Document FrontendMsg
 view _ =
     { title = ""
     , body =
         [ bootstrapCDN
-        , div [ Attr.class "p-4" ] [ viewSignUpForm ]
+        , Html.h4 [ Attr.class "py-3 d-flex flex-row justify-content-center" ] [ text "Login" ]
+        , div [ Attr.class "px-3" ] [ viewSignUpForm ]
         ]
     }
 
 
 viewSignUpForm : Html.Html msg
 viewSignUpForm =
-    form []
+    div [ Attr.class "block" ]
         [ div
             [ Attr.class "mb-3"
             ]
             [ label
-                [ Attr.for "exampleInputEmail1"
+                [ Attr.for "emailAddressInput"
                 , Attr.class "form-label"
                 ]
                 [ text "Email address" ]
             , input
                 [ Attr.type_ "email"
                 , Attr.class "form-control"
-                , Attr.id "exampleInputEmail1"
+                , Attr.id "emailAddressInput"
                 , Attr.attribute "aria-describedby" "emailHelp"
                 ]
                 []
