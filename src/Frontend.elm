@@ -4,9 +4,10 @@ import Browser exposing (UrlRequest(..))
 import Browser.Navigation as Nav
 import Html exposing (button, div, input, label, text)
 import Html.Attributes as Attr
+import Html.Events exposing (onClick)
 import Lamdera
 import Maybe
-import Route exposing (Route)
+import Route
 import Types exposing (..)
 import Url
 
@@ -70,6 +71,9 @@ init url key =
 update : FrontendMsg -> Model -> ( Model, Cmd FrontendMsg )
 update msg model =
     case msg of
+        ClickedCreateRoom ->
+            ( model, Lamdera.sendToBackend CreateRoom )
+
         UrlClicked urlRequest ->
             case urlRequest of
                 Internal url ->
@@ -127,7 +131,7 @@ viewSession model =
             div [] [ text ("sessionId " ++ session.sessionId) ]
 
 
-viewMain : Model -> Html.Html msg
+viewMain : Model -> Html.Html FrontendMsg
 viewMain model =
     case model.route of
         Route.Home ->
@@ -137,13 +141,17 @@ viewMain model =
             viewLogin
 
 
-viewHome : Html.Html msg
+viewHome : Html.Html FrontendMsg
 viewHome =
     div
         [ Attr.class "p-4"
         ]
         [ Html.h4 [] [ text "Jukebox" ]
-        , button [ Attr.class "btn btn-primary btn-block" ] [ text "Create Room" ]
+        , button
+            [ Attr.class "btn btn-primary btn-block"
+            , onClick ClickedCreateRoom
+            ]
+            [ text "Create Room" ]
         ]
 
 

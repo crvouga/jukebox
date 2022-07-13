@@ -6,7 +6,6 @@ import Dict exposing (Dict)
 import Lamdera exposing (ClientId, SessionId)
 import Maybe exposing (Maybe)
 import Route exposing (Route)
-import Set exposing (Set)
 import Url exposing (Url)
 
 
@@ -30,10 +29,12 @@ type FrontendMsg
     = UrlClicked UrlRequest
     | UrlChanged Url
     | NoOpFrontendMsg
+    | ClickedCreateRoom
 
 
 type ToBackend
     = NoOpToBackend
+    | CreateRoom
 
 
 type BackendMsg

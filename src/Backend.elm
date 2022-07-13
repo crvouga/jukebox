@@ -2,8 +2,6 @@ module Backend exposing (..)
 
 import Dict
 import Lamdera exposing (ClientId, SessionId)
-import Set
-import Time
 import Types exposing (..)
 
 
@@ -96,6 +94,9 @@ updateFromFrontend : SessionId -> ClientId -> ToBackend -> Model -> ( Model, Cmd
 updateFromFrontend _ _ msg model =
     case msg of
         NoOpToBackend ->
+            ( model, Cmd.none )
+
+        CreateRoom ->
             ( model, Cmd.none )
 
 
