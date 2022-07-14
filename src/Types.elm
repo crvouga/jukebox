@@ -15,14 +15,33 @@ type alias FrontendModel =
     , tickCount : Maybe Int
     , route : Route
     , session : Maybe Session
+    , rooms : Rooms
+    , roomName : String
+    , status : Status
     }
+
+
+type Status
+    = Idle
+    | Loading
+    | Resulted CreateRoomResult
 
 
 type alias BackendModel =
     { message : String
     , tickCount : Int
     , sessions : Dict SessionId Session
+    , rooms : Rooms
+    , runningRoomId : Int
     }
+
+
+type alias Rooms =
+    Dict Int Room
+
+
+type alias Room =
+    { name : String }
 
 
 type FrontendMsg
@@ -30,11 +49,13 @@ type FrontendMsg
     | UrlChanged Url
     | NoOpFrontendMsg
     | ClickedCreateRoom
+    | InputtedRoomName String
+    | ClickedCloseError
 
 
 type ToBackend
     = NoOpToBackend
-    | CreateRoom
+    | CreateRoom { name : String }
 
 
 type BackendMsg
@@ -48,9 +69,20 @@ type ToFrontend
     = NoOpToFrontend
     | NewTick Int
     | GotSession Session
+    | CreateRoomResulted CreateRoomResult
+    | Sync { rooms : Rooms }
+
+
+type alias CreateRoomResult =
+    Result CreateRoomProblem Rooms
+
+
+type CreateRoomProblem
+    = InvalidRoomName
 
 
 type alias Session =
     { sessionId : SessionId
     , clientId : ClientId
+    , name : Maybe String
     }

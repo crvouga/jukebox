@@ -2,9 +2,10 @@ module Frontend exposing (..)
 
 import Browser exposing (UrlRequest(..))
 import Browser.Navigation as Nav
-import Html exposing (button, div, input, label, text)
-import Html.Attributes as Attr
-import Html.Events exposing (onClick)
+import Dict
+import Html exposing (a, article, button, div, i, input, label, p, span, text)
+import Html.Attributes as Attr exposing (attribute, class, placeholder, type_, value)
+import Html.Events exposing (onClick, onInput)
 import Lamdera
 import Maybe
 import Route
@@ -59,6 +60,9 @@ init url key =
       , tickCount = Maybe.Nothing
       , route = url |> Route.fromUrl |> Maybe.withDefault Route.Home
       , session = Maybe.Nothing
+      , rooms = Dict.empty
+      , roomName = ""
+      , status = Idle
       }
     , Cmd.none
     )
@@ -71,9 +75,6 @@ init url key =
 update : FrontendMsg -> Model -> ( Model, Cmd FrontendMsg )
 update msg model =
     case msg of
-        ClickedCreateRoom ->
-            ( model, Lamdera.sendToBackend CreateRoom )
-
         UrlClicked urlRequest ->
             case urlRequest of
                 Internal url ->
@@ -92,6 +93,15 @@ update msg model =
         NoOpFrontendMsg ->
             ( model, Cmd.none )
 
+        ClickedCreateRoom ->
+            ( { model | status = Loading }, Lamdera.sendToBackend (CreateRoom { name = model.roomName }) )
+
+        InputtedRoomName roomName ->
+            ( { model | roomName = roomName, status = Idle }, Cmd.none )
+
+        ClickedCloseError ->
+            ( { model | status = Idle }, Cmd.none )
+
 
 updateFromBackend : ToFrontend -> Model -> ( Model, Cmd FrontendMsg )
 updateFromBackend msg model =
@@ -102,8 +112,19 @@ updateFromBackend msg model =
         NewTick tickCount ->
             ( { model | tickCount = Maybe.Just tickCount }, Cmd.none )
 
+        CreateRoomResulted result ->
+            case result of
+                Ok rooms ->
+                    ( { model | status = Resulted result, rooms = rooms, roomName = "" }, Cmd.none )
+
+                Err _ ->
+                    ( { model | status = Resulted result }, Cmd.none )
+
         NoOpToFrontend ->
             ( model, Cmd.none )
+
+        Sync { rooms } ->
+            ( { model | rooms = rooms }, Cmd.none )
 
 
 
@@ -114,8 +135,7 @@ view : Model -> Browser.Document FrontendMsg
 view model =
     { title = "Jukebox"
     , body =
-        [ bootstrapCDN
-        , viewSession model
+        [ bulmaCDN
         , viewMain model
         ]
     }
@@ -135,23 +155,124 @@ viewMain : Model -> Html.Html FrontendMsg
 viewMain model =
     case model.route of
         Route.Home ->
-            viewHome
+            viewHome model
 
         Route.Login ->
             viewLogin
 
 
-viewHome : Html.Html FrontendMsg
-viewHome =
+viewHome : Model -> Html.Html FrontendMsg
+viewHome model =
     div
-        [ Attr.class "p-4"
+        [ Attr.class "px-4 py-4"
         ]
-        [ Html.h4 [] [ text "Jukebox" ]
+        [ Html.h1
+            [ Attr.class "title" ]
+            [ text "Jukebox" ]
+        , div [ class "field" ]
+            [ label [ class "label" ]
+                [ text "Room Name" ]
+            , div [ class "control" ]
+                [ input
+                    [ class
+                        (if isInvalidRoomName model then
+                            "input is-danger"
+
+                         else
+                            "input"
+                        )
+                    , placeholder "Enter room name"
+                    , type_ "email"
+                    , value model.roomName
+                    , onInput (\roomName -> InputtedRoomName roomName)
+                    ]
+                    []
+                ]
+            , if isInvalidRoomName model then
+                p [ class "help is-danger" ]
+                    [ text "Invalid room name" ]
+
+              else
+                p [] []
+            ]
         , button
-            [ Attr.class "btn btn-primary btn-block"
+            [ Attr.class
+                (String.join " "
+                    [ "button is-primary is-fullwidth"
+                    , if model.status == Loading then
+                        "is-loading"
+
+                      else
+                        ""
+                    ]
+                )
             , onClick ClickedCreateRoom
             ]
             [ text "Create Room" ]
+        , div []
+            (model.rooms
+                |> Dict.toList
+                |> List.map Tuple.second
+                |> List.map (\room -> viewRoomPanel { roomName = room.name })
+            )
+        ]
+
+
+isInvalidRoomName : Model -> Bool
+isInvalidRoomName model =
+    case model.status of
+        Idle ->
+            False
+
+        Loading ->
+            False
+
+        Resulted result ->
+            case result of
+                Ok _ ->
+                    False
+
+                Err problem ->
+                    case problem of
+                        InvalidRoomName ->
+                            True
+
+
+viewStatus : Model -> Html.Html FrontendMsg
+viewStatus model =
+    case model.status of
+        Idle ->
+            div [] []
+
+        Loading ->
+            div [] []
+
+        Resulted result ->
+            case result of
+                Ok _ ->
+                    div [] []
+
+                Err problem ->
+                    case problem of
+                        InvalidRoomName ->
+                            article [ class "message is-danger mt-2" ]
+                                [ div [ class "message-header" ]
+                                    [ p []
+                                        [ text "Invalid room name" ]
+                                    , button [ attribute "aria-label" "delete", class "delete", onClick ClickedCloseError ]
+                                        []
+                                    ]
+                                ]
+
+
+viewRoomPanel : { roomName : String } -> Html.Html msg
+viewRoomPanel { roomName } =
+    a [ class "panel-block is-active" ]
+        [ span [ class "panel-icon" ]
+            [ i [ attribute "aria-hidden" "true", class "fas fa-book" ]
+                []
+            ]
+        , text roomName
         ]
 
 
@@ -162,14 +283,14 @@ viewLogin =
             [ Attr.class "mb-3"
             ]
             [ label
-                [ Attr.for "emailAddressInput"
+                [ Attr.for "roomNameInput"
                 , Attr.class "form-label"
                 ]
                 [ text "Email address" ]
             , input
                 [ Attr.type_ "email"
                 , Attr.class "form-control"
-                , Attr.id "emailAddressInput"
+                , Attr.id "roomNameInput"
                 , Attr.attribute "aria-describedby" "emailHelp"
                 ]
                 []
@@ -203,6 +324,15 @@ bootstrapCDN =
         , Attr.rel "stylesheet"
         , Attr.attribute "integrity" "sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
         , Attr.attribute "crossorigin" "anonymous"
+        ]
+        []
+
+
+bulmaCDN : Html.Html msg
+bulmaCDN =
+    Html.node "link"
+        [ Attr.href "https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"
+        , Attr.rel "stylesheet"
         ]
         []
 

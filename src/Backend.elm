@@ -44,6 +44,8 @@ init =
     ( { message = "Hello!"
       , tickCount = 0
       , sessions = Dict.empty
+      , rooms = Dict.empty
+      , runningRoomId = 0
       }
     , Cmd.none
     )
@@ -62,13 +64,17 @@ update msg model =
                 session =
                     { sessionId = sessionId
                     , clientId = clientId
+                    , name = Nothing
                     }
             in
             ( { model
                 | sessions =
                     Dict.insert sessionId session model.sessions
               }
-            , Lamdera.sendToFrontend clientId (GotSession session)
+            , Cmd.batch
+                [ Lamdera.sendToFrontend clientId (GotSession session)
+                , Lamdera.sendToFrontend clientId (Sync { rooms = model.rooms })
+                ]
             )
 
         ClientDisconnected sessionId _ ->
@@ -91,13 +97,30 @@ update msg model =
 
 
 updateFromFrontend : SessionId -> ClientId -> ToBackend -> Model -> ( Model, Cmd BackendMsg )
-updateFromFrontend _ _ msg model =
+updateFromFrontend _ clientId msg model =
     case msg of
         NoOpToBackend ->
             ( model, Cmd.none )
 
-        CreateRoom ->
-            ( model, Cmd.none )
+        CreateRoom room ->
+            let
+                roomName =
+                    String.trim room.name
+            in
+            if String.length roomName == 0 then
+                ( model, Lamdera.sendToFrontend clientId (CreateRoomResulted (Result.Err InvalidRoomName)) )
+
+            else
+                let
+                    roomsNew =
+                        Dict.insert model.runningRoomId room model.rooms
+                in
+                ( { model
+                    | rooms = roomsNew
+                    , runningRoomId = model.runningRoomId + 1
+                  }
+                , Lamdera.broadcast (CreateRoomResulted (Result.Ok roomsNew))
+                )
 
 
 
@@ -109,4 +132,6 @@ subscriptions _ =
     Sub.batch
         [ Lamdera.onConnect ClientConnected
         , Lamdera.onDisconnect ClientDisconnected
+
+        -- , Time.every 1000 (\_ -> Ticked)
         ]
