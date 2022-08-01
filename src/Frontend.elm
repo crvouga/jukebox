@@ -1,3 +1,4 @@
+
 module Frontend exposing (..)
 
 import Browser exposing (UrlRequest(..))
@@ -97,7 +98,7 @@ update msg model =
             ( { model | status = Loading }, Lamdera.sendToBackend (CreateRoom { name = model.roomName }) )
 
         InputtedRoomName roomName ->
-            ( { model | roomName = roomName, status = Idle }, Cmd.none )
+             ( { model | roomName = roomName, status = Idle }, Cmd.none )
 
         ClickedCloseError ->
             ( { model | status = Idle }, Cmd.none )
